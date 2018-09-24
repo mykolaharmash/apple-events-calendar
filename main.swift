@@ -1,8 +1,5 @@
-import Foundation
-import AECore
+//import Foundation
 
-let a: URL? = URL(string: "")
+//let a: URL? = URL(string: "")
 
 print("Hello World!")
-
-hello()
