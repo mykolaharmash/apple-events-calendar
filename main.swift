@@ -1,5 +1,35 @@
-//import Foundation
+import Foundation
 
-//let a: URL? = URL(string: "")
+func readEvents(from path: String) throws -> [String] {
+  let events: [String] = try FileManager.default.contentsOfDirectory(atPath: path)
+  
+  if (events.count == 0) {
+      throw ParseError.NoEvents
+  }
+  
+  return events
+}
 
-print("Hello World!")
+func getEventsDir(from args: [String]) throws -> String {
+  guard args.count > 1 else {
+    throw ParseError.NoEventsFolder
+  }
+  
+  return CommandLine.arguments[1]
+}
+
+let eventsDir: String
+let events: [String]
+
+do {
+  eventsDir = try getEventsDir(from: CommandLine.arguments)
+  events = try readEvents(from: eventsDir)
+} catch let error as ParseError {
+  print(error.rawValue)
+  throw error
+} catch {
+  print(error)
+  throw error
+}
+
+print(events)
