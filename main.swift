@@ -1,6 +1,6 @@
 import Foundation
 
-func readEvents(from path: String) throws -> [String] {
+func readEventsList(from path: String) throws -> [String] {
   let events: [String] = try FileManager.default.contentsOfDirectory(atPath: path)
   
   if (events.count == 0) {
@@ -19,11 +19,11 @@ func getEventsDir(from args: [String]) throws -> String {
 }
 
 let eventsDir: String
-let events: [String]
+let eventsFileList: [String]
 
 do {
   eventsDir = try getEventsDir(from: CommandLine.arguments)
-  events = try readEvents(from: eventsDir)
+  eventsFileList = try readEventsList(from: eventsDir)
 } catch let error as ParseError {
   print(error.rawValue)
   throw error
@@ -32,4 +32,4 @@ do {
   throw error
 }
 
-print(events)
+print(eventsFileList)
