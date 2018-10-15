@@ -1,13 +1,17 @@
 import Foundation
 
-func readEventsList(from path: String) throws -> [String] {
-  let events: [String] = try FileManager.default.contentsOfDirectory(atPath: path)
+func readEventsList(from path: String) throws -> [URL] {
+  let directoryURL = URL(fileURLWithPath: path)
+  let eventsURLs: [URL] = try FileManager.default.contentsOfDirectory(
+    at: directoryURL,
+    includingPropertiesForKeys: nil
+    ).filter { !$0.hasDirectoryPath }
   
-  if (events.count == 0) {
-      throw ParseError.NoEvents
+  if (eventsURLs.count == 0) {
+    throw ParseError.NoEvents
   }
   
-  return events
+  return eventsURLs
 }
 
 func getEventsDir(from args: [String]) throws -> String {
@@ -18,12 +22,18 @@ func getEventsDir(from args: [String]) throws -> String {
   return CommandLine.arguments[1]
 }
 
+func readEvents(from filesList: [URL]) throws -> [AppleEvent] {
+  return try filesList.map { try AppleEvent(fromURL: $0) }
+}
+
 let eventsDir: String
-let eventsFileList: [String]
+let eventsFileList: [URL]
+let eventsList: [AppleEvent]
 
 do {
   eventsDir = try getEventsDir(from: CommandLine.arguments)
   eventsFileList = try readEventsList(from: eventsDir)
+  eventsList = try readEvents(from: eventsFileList)
 } catch let error as ParseError {
   print(error.rawValue)
   throw error
@@ -32,4 +42,6 @@ do {
   throw error
 }
 
-print(eventsFileList)
+eventsList.map { print($0.details) }
+
+
