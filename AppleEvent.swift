@@ -3,11 +3,8 @@ import Yams
 
 struct AppleEventYAMLSctructure: Decodable {
   let name: String
-  let date: String
-  let startTime: String
+  let startsAt: Date
   let link: URL
-  
-//  let formattedDate: Date
   
   enum CodingKeys: String, CodingKey {
     case name
@@ -16,22 +13,36 @@ struct AppleEventYAMLSctructure: Decodable {
     case link
   }
   
+  static func combine(date: String, time: String) -> Date? {
+    let dateFormatter = DateFormatter()
+    
+    dateFormatter.dateFormat = "dd.MM.yyyy HH:mm"
+    dateFormatter.timeZone = TimeZone(identifier: "America/Los_Angeles")
+    
+    return dateFormatter.date(from: "\(date) \(time)")
+  }
+  
   init(from decoder: Decoder) throws {
     let container = try decoder.container(keyedBy: CodingKeys.self)
     
     name = try container.decode(String.self, forKey: .name)
-    date = try container.decode(String.self, forKey: .date)
-    startTime = try container.decode(String.self, forKey: .startTime)
     link = try container.decode(URL.self, forKey: .link)
     
+    let date = try container.decode(String.self, forKey: .date)
+    let time = try container.decode(String.self, forKey: .startTime)
+    let combinedDate = AppleEventYAMLSctructure.combine(date: date, time: time)
+    
+    guard combinedDate != nil else {
+      throw ParseError.NoEventDate
+    }
+    
+    startsAt = combinedDate!
+    
 //    print(Locale.availableIdentifiers)
-    
-    let dateFormatter = DateFormatter()
-    
-    dateFormatter.dateFormat = "dd.MM.yyyy"
-    dateFormatter.timeZone = TimeZone(secondsFromGMT: 0)
+//    print(TimeZone.knownTimeZoneIdentifiers)
   }
 }
+
 
 struct AppleEvent {
   let details: AppleEventYAMLSctructure
