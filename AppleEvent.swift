@@ -1,17 +1,21 @@
 import Foundation
 import Yams
 
-struct AppleEventYAMLSctructure: Decodable {
+struct AppleEventDetails: Decodable {
   let name: String
   let startsAt: Date
   let link: URL
+  var city: String
   
   enum CodingKeys: String, CodingKey {
     case name
     case date
     case startTime = "start-time"
     case link
+    case city
   }
+  
+  static let DEFAULT_CITY = "San Jose, CA"
   
   static func combine(date: String, time: String) -> Date? {
     let dateFormatter = DateFormatter()
@@ -27,10 +31,11 @@ struct AppleEventYAMLSctructure: Decodable {
     
     name = try container.decode(String.self, forKey: .name)
     link = try container.decode(URL.self, forKey: .link)
+    city = try container.decodeIfPresent(String.self, forKey: .city) ?? AppleEventDetails.DEFAULT_CITY
     
     let date = try container.decode(String.self, forKey: .date)
     let time = try container.decode(String.self, forKey: .startTime)
-    let combinedDate = AppleEventYAMLSctructure.combine(date: date, time: time)
+    let combinedDate = AppleEventDetails.combine(date: date, time: time)
     
     guard combinedDate != nil else {
       throw ParseError.NoEventDate
@@ -45,9 +50,9 @@ struct AppleEventYAMLSctructure: Decodable {
 
 
 struct AppleEvent {
-  let details: AppleEventYAMLSctructure
+  let details: AppleEventDetails
   
-  init(details: AppleEventYAMLSctructure) {
+  init(details: AppleEventDetails) {
     self.details = details
   }
   
@@ -56,7 +61,7 @@ struct AppleEvent {
     let encodedYAML = String(bytes: content, encoding: String.Encoding.utf8)!
     
     let decoder = YAMLDecoder()
-    let decodedYAML = try decoder.decode(AppleEventYAMLSctructure.self, from: encodedYAML)
+    let decodedYAML = try decoder.decode(AppleEventDetails.self, from: encodedYAML)
     
     self.init(details: decodedYAML)
   }
