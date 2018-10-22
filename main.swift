@@ -22,6 +22,16 @@ func getEventsDir(from args: [String]) throws -> String {
   return CommandLine.arguments[1]
 }
 
+func getGoogleAPIKey(from env: [String: String]) throws -> String {
+  let key: String? = env["GOOGLE_API_KEY"]
+  
+  guard key != nil else {
+    throw ArgumentsError.NoGoogleAPIKey
+  }
+  
+  return key!
+}
+
 func readEvents(from filesList: [URL]) throws -> [AppleEvent] {
   return try filesList.map { try AppleEvent(fromURL: $0) }
 }
@@ -29,19 +39,20 @@ func readEvents(from filesList: [URL]) throws -> [AppleEvent] {
 let eventsDir: String
 let eventsFileList: [URL]
 let eventsList: [AppleEvent]
+let googleApiKey: String
 
 do {
+  googleApiKey = try getGoogleAPIKey(from: ProcessInfo.processInfo.environment)
   eventsDir = try getEventsDir(from: CommandLine.arguments)
   eventsFileList = try readEventsList(from: eventsDir)
   eventsList = try readEvents(from: eventsFileList)
-} catch let error as ParseError {
-  print(error.rawValue)
-  throw error
+  
+  try eventsList.forEach { print(try $0.calculateStartsAt()) }
 } catch {
   print(error)
   throw error
 }
 
-eventsList.map { print($0.details) }
+//print(ProcessInfo.processInfo.environment["GOOGLE_API_KEY"])
 
 

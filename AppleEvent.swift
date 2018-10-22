@@ -1,60 +1,48 @@
 import Foundation
 import Yams
 
-struct AppleEventDetails: Decodable {
+private enum AppleEventError: Error {
+  case error(String)
+}
+
+private struct AppleEventDetails: Decodable {
   let name: String
-  let startsAt: Date
   let link: URL
   var city: String
+  let date: String
+  let startTime: String
   
   enum CodingKeys: String, CodingKey {
     case name
-    case date
-    case startTime = "start-time"
     case link
     case city
+    case date
+    case startTime = "start-time"
   }
   
   static let DEFAULT_CITY = "San Jose, CA"
-  
-  static func combine(date: String, time: String) -> Date? {
-    let dateFormatter = DateFormatter()
-    
-    dateFormatter.dateFormat = "dd.MM.yyyy HH:mm"
-    dateFormatter.timeZone = TimeZone(identifier: "America/Los_Angeles")
-    
-    return dateFormatter.date(from: "\(date) \(time)")
-  }
-  
+
   init(from decoder: Decoder) throws {
     let container = try decoder.container(keyedBy: CodingKeys.self)
-    
+
     name = try container.decode(String.self, forKey: .name)
     link = try container.decode(URL.self, forKey: .link)
     city = try container.decodeIfPresent(String.self, forKey: .city) ?? AppleEventDetails.DEFAULT_CITY
-    
-    let date = try container.decode(String.self, forKey: .date)
-    let time = try container.decode(String.self, forKey: .startTime)
-    let combinedDate = AppleEventDetails.combine(date: date, time: time)
-    
-    guard combinedDate != nil else {
-      throw ParseError.NoEventDate
-    }
-    
-    startsAt = combinedDate!
-    
-//    print(Locale.availableIdentifiers)
-//    print(TimeZone.knownTimeZoneIdentifiers)
+    date = try container.decode(String.self, forKey: .date)
+    startTime = try container.decode(String.self, forKey: .startTime)
   }
 }
 
 
-struct AppleEvent {
-  let details: AppleEventDetails
+class AppleEvent {
+  let name: String
+  let link: URL
+  let city: String
+  var timeZone: TimeZone?
+  var startsAt: Date?
   
-  init(details: AppleEventDetails) {
-    self.details = details
-  }
+  private let rawDate: String
+  private let rawStartTime: String
   
   init(fromURL url: URL) throws {
     let content: Data! = FileManager.default.contents(atPath: url.path)
@@ -63,6 +51,33 @@ struct AppleEvent {
     let decoder = YAMLDecoder()
     let decodedYAML = try decoder.decode(AppleEventDetails.self, from: encodedYAML)
     
-    self.init(details: decodedYAML)
+    name = decodedYAML.name
+    link = decodedYAML.link
+    city = decodedYAML.city
+    rawDate = decodedYAML.date
+    rawStartTime = decodedYAML.startTime
+  }
+  
+  func fetchCityTimeZone() {
+    
+  }
+  
+  func calculateStartsAt() throws {
+    guard timeZone != nil else {
+      throw AppleEventError.error("Time zone is unknown, calculate it before calculating start time.")
+    }
+    
+    let dateFormatter = DateFormatter()
+    
+    dateFormatter.dateFormat = "dd.MM.yyyy HH:mm"
+    dateFormatter.timeZone = TimeZone(identifier: "America/Los_Angeles")
+    
+    let combinedDate = dateFormatter.date(from: "\(rawDate) \(rawStartTime)")
+
+    guard combinedDate != nil else {
+      throw ParseError.NoEventDate
+    }
+
+    startsAt = combinedDate!
   }
 }
