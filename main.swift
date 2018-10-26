@@ -46,12 +46,23 @@ do {
   eventsDir = try getEventsDir(from: CommandLine.arguments)
   eventsFileList = try readEventsList(from: eventsDir)
   eventsList = try readEvents(from: eventsFileList)
-  
-  try eventsList.forEach { print(try $0.calculateStartsAt()) }
 } catch {
   print(error)
-  throw error
+  exit(1)
 }
+
+eventsList.forEach { (event: AppleEvent) in
+  event.calculateStartTime(apiKey: googleApiKey) { (result: String?, error: Error?) in
+    guard error == nil else {
+      print(error!)
+      exit(1)
+    }
+    
+    print(result!)
+  }
+}
+
+RunLoop.main.run()
 
 //print(ProcessInfo.processInfo.environment["GOOGLE_API_KEY"])
 
